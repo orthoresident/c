@@ -354,10 +354,7 @@
         <span id="syncText">Not connected to Google Sheets</span>
       </div>
       <button class="btn btn-ghost" onclick="openConfigModal()">⚙️ Google Sheets</button>
-      <button class="btn btn-success" onclick="syncFromSheets()">🔄 Sync</button>
-      <button class="btn btn-ghost" onclick="openPrintModal()" title="Print / Save as PDF">🖨️ Print</button>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light / dark">🌙</button>
-      <button class="btn btn-primary" onclick="openAddModal()">+ Add Patient</button>
     </div>
   </header>
 
@@ -377,7 +374,7 @@
     <div class="stat-card">
       <div class="stat-icon">✔️</div>
       <div class="stat-info"><label>Done</label><strong id="statSync" style="font-size:1.35rem;color:#10b981">0</strong></div>
-    </div>v>
+    </div>
   </div>
 
   <div class="toolbar">
@@ -395,28 +392,18 @@
       <thead>
         <!-- Column headers -->
         <tr class="header-row">
-          <th class="th-center select-col"><input type="checkbox" id="checkAll" onclick="toggleCheckAll(this)" title="Select all" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)"></th>
           <th onclick="sortBy('room')">Room</th>
           <th onclick="sortBy('admission')">Date of Admission</th>
           <th onclick="sortBy('name')">Name</th>
           <th onclick="sortBy('age')">Age</th>
           <th onclick="sortBy('diagnosis')">Diagnosis</th>
           <th onclick="sortBy('decision')">Decision</th>
-          <th onclick="sortBy('hb')">Hb</th>
-          <th onclick="sortBy('plt')">PLT</th>
-          <th onclick="sortBy('inr')">INR</th>
-          <th onclick="sortBy('lft')">LFT</th>
-          <th onclick="sortBy('rft')">RFT</th>
-          <th onclick="sortBy('abo')">ABO</th>
-          <th onclick="sortBy('vir')">VIR</th>
           <th onclick="sortBy('anesthesia')">Status</th>
           <th onclick="sortBy('skin')">Skin</th>
           <th onclick="sortBy('notes')">Notes</th>
-          <th class="th-center">Actions</th>
         </tr>
         <!-- Per-column filter inputs -->
         <tr class="filter-row">
-          <th class="select-col"><input type="text" disabled></th>
           <th><input type="text" id="fil_room"      placeholder="🔍" oninput="renderTable()"></th>
           <th>
             <div class="date-filter-wrapper">
@@ -439,17 +426,9 @@
           <th><input type="text" id="fil_age"       placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_diagnosis"  placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_decision"   placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_hb"        placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_plt"       placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_inr"       placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_lft"       placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_rft"       placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_abo"       placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_vir"       placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_anesthesia"  placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_skin"      placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_notes"     placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" disabled></th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -462,13 +441,6 @@
   </div>
 </div>
 
-<!-- Add / Edit Modal -->
-<div class="modal-overlay" id="patientModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title" id="modalTitle">Add New Patient</h2>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
     <div class="form-grid">
       <div class="form-group">
         <label>Room</label>
@@ -614,14 +586,6 @@ function doPost(e) {
   </div>
 </div>
 
-<!-- Print Modal -->
-<div class="modal-overlay" id="printModal">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <h2 class="modal-title">🖨️ Print / Save as PDF</h2>
-      <button class="modal-close" onclick="closePrintModal()">✕</button>
-    </div>
-
     <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px">Choose which patients to include and your preferred output method.</p>
 
     <h3 style="font-size:0.8rem;font-weight:700;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Patients to include</h3>
@@ -691,7 +655,7 @@ function doPost(e) {
     applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
   }
 
-  const COLS = ['room','admission','name','age','diagnosis','decision','hb','plt','inr','lft','rft','abo','vir','anesthesia','skin','notes'];
+  const COLS = ['room','admission','name','age','diagnosis','decision','anesthesia','skin','notes'];
 
   // ── Render ───────────────────────────────────────────────────
   function renderTable() {
@@ -743,29 +707,15 @@ function doPost(e) {
       thead.style.display = '';
       tbody.innerHTML = filtered.map(p => `
         <tr data-id="${p.id}">
-          <td class="td-center select-col"><input type="checkbox" class="row-check" value="${p.id}" onchange="updateCheckAllState()"></td>
           <td class="room-cell">${esc(p.room)}</td>
           <td>${p.admission ? esc(p.admission) : esc('')}</td>
           <td class="name-cell">${esc(p.name)}</td>
           <td>${esc(p.age)}</td>
-          <td>${esc(p.diagnosis)}</td>
-          <td>${decisionBadge(p.decision)}</td>
-          <td>${hbBadge(p.hb)}</td>
-          <td>${esc(p.plt)}</td>
-          <td>${inrBadge(p.inr)}</td>
-          <td>${labBadge(p.lft)}</td>
-          <td>${labBadge(p.rft)}</td>
-          <td>${p.abo ? `<span class="badge badge-blue">${esc(p.abo)}</span>` : esc('')}</td>
-          <td>${virBadge(p.vir)}</td>
+          <td style="max-width:500px;white-space:normal;font-size:1rem">${esc(p.diagnosis)}</td>
+          <td style="max-width:500px;white-space:normal;font-size:1rem">${decisionBadge(p.decision)}</td>
           <td>${esc(p.anesthesia)}</td>
           <td>${esc(p.skin)}</td>
           <td style="max-width:200px;white-space:normal;font-size:0.78rem;color:var(--text-muted)">${esc(p.notes)}</td>
-          <td class="td-center">
-            <div class="actions-cell">
-              <button class="btn btn-ghost btn-sm" onclick="openEditModal(${p.id})">✏️</button>
-              <button class="btn btn-danger btn-sm" onclick="deletePatient(${p.id})">🗑️</button>
-            </div>
-          </td>
         </tr>`).join('');
     }
     updateStats();
@@ -788,33 +738,9 @@ function doPost(e) {
     return `<span class="badge ${cls}">${esc(v)}</span>`;
   }
 
-  function hbBadge(v) {
-    if (!v) return esc('');
-    const n = parseFloat(v);
-    const cls = isNaN(n) ? 'badge-gray' : (n<8?'badge-red':n<12?'badge-yellow':'badge-green');
-    return `<span class="badge ${cls}">${esc(v)}</span>`;
-  }
 
-  function inrBadge(v) {
-    if (!v) return esc('');
-    const n = parseFloat(v);
-    const cls = isNaN(n) ? 'badge-gray' : (n>1.5?'badge-red':'badge-green');
-    return `<span class="badge ${cls}">${esc(v)}</span>`;
-  }
 
-  function labBadge(v) {
-    if (!v) return esc('');
-    const l = v.toLowerCase();
-    const cls = (l.includes('غير')||l.includes('abnorm')||l.includes('raised')||l.includes('high')||l.includes('elevated')) ? 'badge-red' : 'badge-green';
-    return `<span class="badge ${cls}">${esc(v)}</span>`;
-  }
 
-  function virBadge(v) {
-    if (!v) return esc('');
-    const l = v.toLowerCase();
-    const cls = (l.includes('إيجابي')||l.includes('positive')||l.includes('pos')||l.includes('+ve')) ? 'badge-red' : 'badge-green';
-    return `<span class="badge ${cls}">${esc(v)}</span>`;
-  }
 
   function updateStats() {
     document.getElementById('statTotal').textContent = patients.length;
@@ -838,61 +764,16 @@ function doPost(e) {
   }
 
   // ── CRUD ─────────────────────────────────────────────────────
-  const FIELDS = ['room','admission','name','age','diagnosis','decision','hb','plt','inr','lft','rft','abo','vir','anesthesia','skin','notes'];
 
-  function openAddModal() {
-    editingId = null;
-    document.getElementById('modalTitle').textContent = 'Add New Patient';
-    FIELDS.forEach(f => { const el=document.getElementById('f_'+f); if(el) el.value=''; });
-    document.getElementById('patientModal').classList.add('active');
-  }
 
-  function openEditModal(id) {
-    id = parseInt(id);
-    const p = patients.find(x=>x.id===id); if(!p) return;
-    editingId = id;
-    document.getElementById('modalTitle').textContent = 'Edit Patient Record';
-    FIELDS.forEach(f => { const el=document.getElementById('f_'+f); if(el) el.value=p[f]||''; });
-    document.getElementById('patientModal').classList.add('active');
-  }
 
   function closeModal()       { document.getElementById('patientModal').classList.remove('active'); }
   function closeConfigModal() { document.getElementById('configModal').classList.remove('active'); }
   function openConfigModal()  { document.getElementById('configModal').classList.add('active'); }
 
-  function getFormData() {
-    return FIELDS.reduce((o,f) => { o[f]=(document.getElementById('f_'+f)?.value||'').trim(); return o; }, {});
-  }
 
-  function savePatient() {
-    const data = getFormData();
-    if (!data.name) { showToast('❌ Name is required','error'); return; }
-    if (editingId) {
-      const idx = patients.findIndex(p=>parseInt(p.id)===parseInt(editingId));
-      if (idx === -1) { showToast('❌ Patient not found','error'); return; }
-      patients[idx] = { ...patients[idx], ...data };
-      syncToSheets('update', patients[idx]);
-      showToast('✅ Patient record updated','success');
-    } else {
-      const np = { id: nextId++, ...data };
-      patients.push(np);
-      localStorage.setItem('nextId', nextId);
-      syncToSheets('add', np);
-      showToast('✅ Patient added successfully','success');
-    }
-    saveLocal(); renderTable(); closeModal();
-  }
 
-  function deletePatient(id) {
-    if (!confirm('Delete this patient record?')) return;
-    const rowIdx = patients.findIndex(x=>x.id===id);
-    patients = patients.filter(x=>x.id!==id);
-    syncToSheets('delete', { id: rowIdx+1 });
-    saveLocal(); renderTable();
-    showToast('🗑️ Patient deleted','info');
-  }
 
-  function saveLocal() { localStorage.setItem('patients', JSON.stringify(patients)); }
 
   // ── Sheets Sync ───────────────────────────────────────────────
   function toSheetRow(p) {
@@ -901,15 +782,6 @@ function doPost(e) {
              ABO:p.abo, VIR:p.vir, Anesthesia:p.anesthesia, Skin:p.skin, Notes:p.notes };
   }
 
-  async function syncToSheets(action, rowData) {
-    if (!sheetsUrl) return;
-    setSyncing(true);
-    try {
-      await fetch(sheetsUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, row:toSheetRow(rowData), id:rowData.id}), mode:'no-cors' });
-      updateLastSync();
-    } catch(e) { showToast('⚠️ Sheets sync failed','error'); }
-    setSyncing(false);
-  }
 
   async function syncFromSheets() {
     if (!sheetsUrl) { showToast('⚠️ Add a Google Sheets URL first','error'); return; }
@@ -919,7 +791,7 @@ function doPost(e) {
       const json = await res.json();
       if (json.data) {
         patients = json.data.map((row,i) => ({
-          id:i+1, room:row.Room||'', admission:(row.Admission||'').toString().split('T')[0], name:row.Name||'', age:row.Age||'',
+          id:i+1, room:row.Room||'', admission:String(row.Admission||'').trim(), name:row.Name||'', age:row.Age||'',
           diagnosis:row.Diagnosis||'', decision:row.Decision||'',
           hb:row.Hb||'', plt:row.Plt||'', inr:row.INR||'',
           lft:row.LFT||'', rft:row.RFT||'', abo:row.ABO||'',
@@ -1021,45 +893,12 @@ function doPost(e) {
   }
 
   // ── Checkbox helpers ─────────────────────────────────────────
-  function toggleCheckAll(cb) {
-    document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
-  }
-  function updateCheckAllState() {
-    const all     = document.querySelectorAll('.row-check');
-    const checked = document.querySelectorAll('.row-check:checked');
-    const ca = document.getElementById('checkAll');
-    if (ca) {
-      ca.checked       = all.length > 0 && checked.length === all.length;
-      ca.indeterminate = checked.length > 0 && checked.length < all.length;
-    }
-  }
-  function getCheckedIds() {
-    return [...document.querySelectorAll('.row-check:checked')].map(c => parseInt(c.value));
-  }
 
   // ── Print / PDF ───────────────────────────────────────────────
   let printScope  = 'all';
   let printMethod = 'print';
 
-  function openPrintModal() {
-    const cnt = getCheckedIds().length;
-    document.getElementById('selectedCountLabel').textContent = cnt + ' row' + (cnt !== 1 ? 's' : '') + ' checked in the table';
-    selectPrintScope('all');
-    selectPrintMethod('print');
-    document.getElementById('printModal').classList.add('active');
-  }
-  function closePrintModal() { document.getElementById('printModal').classList.remove('active'); }
 
-  function selectPrintScope(v) {
-    printScope = v;
-    document.getElementById('optAll').classList.toggle('selected', v === 'all');
-    document.getElementById('optSelected').classList.toggle('selected', v === 'selected');
-  }
-  function selectPrintMethod(v) {
-    printMethod = v;
-    document.getElementById('optPrint').classList.toggle('selected', v === 'print');
-    document.getElementById('optPDF').classList.toggle('selected', v === 'pdf');
-  }
 
   function executePrint() {
     closePrintModal();
@@ -1109,6 +948,11 @@ function doPost(e) {
     }, 800);
   }
 
+  function saveLocal() { localStorage.setItem('patients', JSON.stringify(patients)); }
+
+  // Auto-sync every 30 seconds
+  syncFromSheets();
+  setInterval(syncFromSheets, 30000);
   renderTable();
 </script>
 </body>
