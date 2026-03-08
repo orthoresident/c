@@ -501,43 +501,6 @@ function doPost(e) {
   </div>
 </div>
 
-    <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:18px">Choose which patients to include and your preferred output method.</p>
-
-    <h3 style="font-size:0.8rem;font-weight:700;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Patients to include</h3>
-    <div class="print-options-grid" style="margin-bottom:20px">
-      <div class="print-option-card selected" id="optAll" onclick="selectPrintScope('all')">
-        <div class="icon">👥</div>
-        <h4>All Patients</h4>
-        <p>Print every record currently in the table</p>
-      </div>
-      <div class="print-option-card" id="optSelected" onclick="selectPrintScope('selected')">
-        <div class="icon">☑️</div>
-        <h4>Selected Patients</h4>
-        <p id="selectedCountLabel">0 rows checked in the table</p>
-      </div>
-    </div>
-
-    <h3 style="font-size:0.8rem;font-weight:700;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Output format</h3>
-    <div class="print-options-grid">
-      <div class="print-option-card selected" id="optPrint" onclick="selectPrintMethod('print')">
-        <div class="icon">🖨️</div>
-        <h4>Print</h4>
-        <p>Send directly to your printer</p>
-      </div>
-      <div class="print-option-card" id="optPDF" onclick="selectPrintMethod('pdf')">
-        <div class="icon">📄</div>
-        <h4>Save as PDF</h4>
-        <p>Save to PDF via your browser's print dialog</p>
-      </div>
-    </div>
-
-    <div class="modal-footer" style="margin-top:22px">
-      <button class="btn btn-primary" onclick="executePrint()">🖨️ Continue</button>
-      <button class="btn btn-ghost"   onclick="closePrintModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <script>
   // ── State ────────────────────────────────────────────────────
   let patients  = JSON.parse(localStorage.getItem('patients')  || '[]');
