@@ -245,6 +245,23 @@
   .empty-state .icon { font-size:2.8rem; margin-bottom:14px; opacity:0.45; }
   .empty-state p { font-size:0.88rem; }
 
+
+  /* Done patients — highlighted and sorted to bottom */
+  tbody tr.row-done {
+    background: rgba(16,185,129,0.07) !important;
+    border-right: 3px solid var(--success);
+    opacity: 0.75;
+  }
+  tbody tr.row-done td { color: rgba(255,255,255,0.5) !important; }
+  tbody tr.row-done .room-cell,
+  tbody tr.row-done .name-cell { color: rgba(255,255,255,0.5) !important; }
+  body.light tbody tr.row-done {
+    background: rgba(5,150,105,0.06) !important;
+    border-right: 3px solid var(--success);
+  }
+  body.light tbody tr.row-done td { color: rgba(30,41,59,0.4) !important; }
+  body.light tbody tr.row-done .room-cell,
+  body.light tbody tr.row-done .name-cell { color: rgba(30,41,59,0.4) !important; }
   ::-webkit-scrollbar { width:6px; height:6px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.14); border-radius:3px; }
@@ -399,7 +416,7 @@
           <th onclick="sortBy('name')">Name</th>
           <th onclick="sortBy('age')">Age</th>
           <th onclick="sortBy('diagnosis')">Diagnosis</th>
-          <th onclick="sortBy('speciality')">Speciality</th>
+          <th onclick="sortBy('decision')">Decision</th>
           <th onclick="sortBy('anesthesia')">Status</th>
           <th onclick="sortBy('skin')">Skin</th>
           <th onclick="sortBy('notes')">Notes</th>
@@ -428,7 +445,7 @@
           <th><input type="text" id="fil_name"      placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_age"       placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_diagnosis"  placeholder="🔍" oninput="renderTable()"></th>
-          <th><input type="text" id="fil_speciality" placeholder="🔍" oninput="renderTable()"></th>
+          <th><input type="text" id="fil_decision"   placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_anesthesia"  placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_skin"      placeholder="🔍" oninput="renderTable()"></th>
           <th><input type="text" id="fil_notes"     placeholder="🔍" oninput="renderTable()"></th>
@@ -454,7 +471,7 @@
       <h3>📋 Steps to connect Google Sheets</h3>
       <ol class="steps">
         <li>Create a Google Spreadsheet with these headers in row 1:<br>
-          <strong>Room, Admission, Name, Age, Diagnosis, Speciality, Anesthesia, Skin, Notes</strong></li>
+          <strong>Room, Admission, Name, Age, Diagnosis, Decision, Hb, Plt, INR, LFT, RFT, ABO, VIR, Anesthesia, Skin, Notes</strong></li>
         <li>Open <strong>Extensions → Apps Script</strong> and paste the code below, then save:</li>
       </ol>
       <div class="code-snippet">const SHEET_NAME = "Sheet1";
@@ -507,7 +524,7 @@ function doPost(e) {
 <script>
   // ── State ────────────────────────────────────────────────────
   let patients  = JSON.parse(localStorage.getItem('patients')  || '[]');
-  let sheetsUrl = localStorage.getItem('sheetsUrl') || 'https://script.google.com/macros/s/AKfycbzuuOEkPSVIGGIgce7GwA0-ExgozVuXHMMYw91eX-VN0mVEdHHkzqzjEIHhrTQd4Q/exec';
+  let sheetsUrl = localStorage.getItem('sheetsUrl') || 'https://script.google.com/macros/s/AKfycbyqfAe-xJ7wMdIa2yDa_3NUPOqejGAJ-luk1G8WuxJkqhAOXl7YgngUCoiVi0HSNvt6hw/exec';
   let editingId = null;
   let sortKey   = 'room';
   let sortAsc   = true;
@@ -536,7 +553,7 @@ function doPost(e) {
     applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
   }
 
-  const COLS = ['room','admission','name','age','diagnosis','speciality','anesthesia','skin','notes'];
+  const COLS = ['room','admission','name','age','diagnosis','decision','anesthesia','skin','notes'];
 
   // ── Render ───────────────────────────────────────────────────
   function renderTable() {
@@ -567,7 +584,12 @@ function doPost(e) {
       return true;
     });
 
+    const isDone = p => (p.anesthesia||'').toLowerCase().includes('done') || (p.anesthesia||'').toLowerCase().includes('منتهي');
     filtered.sort((a,b) => {
+      // Always push Done patients to bottom
+      const aDone = isDone(a), bDone = isDone(b);
+      if (aDone && !bDone) return 1;
+      if (!aDone && bDone) return -1;
       let va = a[sortKey]||'', vb = b[sortKey]||'';
       if (va !== '' && vb !== '' && !isNaN(va) && !isNaN(vb)) { va = parseFloat(va); vb = parseFloat(vb); }
       if (va < vb) return sortAsc ? -1 :  1;
@@ -587,14 +609,14 @@ function doPost(e) {
       empty.style.display = 'none';
       thead.style.display = '';
       tbody.innerHTML = filtered.map(p => `
-        <tr data-id="${p.id}">
+        <tr data-id="${p.id}" class="${isDone(p) ? 'row-done' : ''}">
           <td class="td-center select-col"><input type="checkbox" class="row-check" value="${p.id}" onchange="updateCheckAllState()"></td>
           <td class="room-cell">${esc(p.room)}</td>
           <td>${p.admission ? esc(p.admission) : esc('')}</td>
           <td class="name-cell">${esc(p.name)}</td>
           <td>${esc(p.age)}</td>
           <td style="max-width:500px;white-space:normal;font-size:1rem">${esc(p.diagnosis)}</td>
-          <td style="max-width:500px;white-space:normal;font-size:1rem">${esc(p.speciality)}</td>
+          <td style="max-width:500px;white-space:normal;font-size:1rem">${decisionBadge(p.decision)}</td>
           <td>${esc(p.anesthesia)}</td>
           <td>${esc(p.skin)}</td>
           <td style="max-width:200px;white-space:normal;font-size:0.78rem;">${esc(p.notes)}</td>
@@ -672,30 +694,13 @@ function doPost(e) {
       const res  = await fetch(sheetsUrl + '?t=' + Date.now());
       const json = await res.json();
       if (json.data) {
-        patients = json.data.map((row,i) => {
-          // Stable unique ID: use sheet UID column if present, else hash name+room+admission
-          const uidRaw = row.UID || row.uid || row.Id || '';
-          const uid = uidRaw
-            ? String(uidRaw).trim()
-            : btoa(encodeURIComponent([row.Name||'', row.Room||'', String(row.Admission||'').trim()].join('|'))).slice(0,20);
-          return {
-            id: uid,
-            _rowNum: i+1,
-            room: row.Room||'',
-            admission: String(row.Admission||'').trim(),
-            name: row.Name||'',
-            age: row.Age||'',
-            diagnosis: row.Diagnosis||'',
-            speciality: row.Speciality||row.Specialty||row.speciality||'',
-            anesthesia: row.Anesthesia||'',
-            skin: row.Skin||'',
-            notes: row.Notes||''
-          };
-        });
-        // Dedup: keep last occurrence of each uid
-        const seen = new Map();
-        patients.forEach(p => seen.set(p.id, p));
-        patients = [...seen.values()];
+        patients = json.data.map((row,i) => ({
+          id:i+1, room:row.Room||'', admission:String(row.Admission||'').trim(), name:row.Name||'', age:row.Age||'',
+          diagnosis:row.Diagnosis||'', decision:row.Decision||'',
+          hb:row.Hb||'', plt:row.Plt||'', inr:row.INR||'',
+          lft:row.LFT||'', rft:row.RFT||'', abo:row.ABO||'',
+          vir:row.VIR||'', anesthesia:row.Anesthesia||'', skin:row.Skin||'', notes:row.Notes||''
+        }));
         nextId = patients.length+1; localStorage.setItem('nextId',nextId);
         saveLocal(); renderTable(); updateLastSync();
         showToast('✅ Synced successfully','success');
@@ -840,7 +845,6 @@ function doPost(e) {
   function executePrint() {
     closePrintModal();
 
-    // ── Determine patient set ──────────────────────
     let toPrint;
     if (printScope === 'selected') {
       const ids = getCheckedIds();
@@ -858,8 +862,7 @@ function doPost(e) {
     document.body.style.zoom = '1';
 
     if (printScope === 'byroom') {
-      // ── BY ROOM: one page per room ─────────────────
-      // Group patients by room, sorted by room name
+      // ── BY ROOM: one clean page per room ──────────
       const roomMap = new Map();
       toPrint.forEach(p => {
         const r = p.room || 'No Room';
@@ -868,15 +871,23 @@ function doPost(e) {
       });
       const rooms = [...roomMap.keys()].sort();
 
-      // Build a full HTML document for each room, separated by page breaks
-      const colHeaders = ['Name','Age','Diagnosis','Speciality','Status','Skin','Notes'];
-      const colKeys    = ['name','age','diagnosis','speciality','anesthesia','skin','notes'];
+      const colHeaders = ['Name','Age','Diagnosis','Decision','Status','Skin','Notes'];
+      const colKeys    = ['name','age','diagnosis','decision','anesthesia','skin','notes'];
+      const e = v => (v===undefined||v===null||v==='')?'—':String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
       const roomPages = rooms.map((room, idx) => {
         const pts = roomMap.get(room);
+        // Sort: non-done first, done at bottom
+        pts.sort((a,b) => {
+          const aD = (a.anesthesia||'').toLowerCase().includes('done');
+          const bD = (b.anesthesia||'').toLowerCase().includes('done');
+          return aD === bD ? 0 : aD ? 1 : -1;
+        });
         const rows = pts.map(p => {
-          const cells = colKeys.map(k => `<td>${String(p[k]||'—').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</td>`).join('');
-          return `<tr>${cells}</tr>`;
+          const isDoneP = (p.anesthesia||'').toLowerCase().includes('done');
+          const rowStyle = isDoneP ? 'opacity:0.5;background:rgba(16,185,129,0.08);border-right:3px solid #10b981' : '';
+          const cells = colKeys.map(k => `<td style="padding:5pt 6pt;border-bottom:1px solid #e2e8f0;vertical-align:top;word-break:break-word">${e(p[k])}</td>`).join('');
+          return `<tr style="${rowStyle}">${cells}</tr>`;
         }).join('');
         const pageBreak = idx < rooms.length - 1 ? 'page-break-after:always;' : '';
         return `<div style="${pageBreak}padding:8mm 8mm 4mm 8mm">
@@ -885,13 +896,13 @@ function doPost(e) {
               <div style="font-size:13pt;font-weight:700">🏥 Ibn Tharwat Hospital</div>
               <div style="font-size:9pt;opacity:0.6">Printed: ${now}</div>
             </div>
-            <div style="font-size:16pt;font-weight:900;color:#2563eb">Room ${room}</div>
+            <div style="font-size:20pt;font-weight:900;color:#2563eb">Room ${room}</div>
             <div style="font-size:9pt;text-align:right;opacity:0.6">${pts.length} patient(s)</div>
           </div>
-          <table style="width:100%;border-collapse:collapse;font-size:10pt;font-family:Cairo,sans-serif;direction:rtl">
+          <table style="width:100%;border-collapse:collapse;font-size:10pt;font-family:Cairo,sans-serif;direction:rtl;table-layout:fixed">
             <thead>
-              <tr style="background:rgba(37,99,235,0.15)">
-                ${colHeaders.map(h=>`<th style="padding:5pt 6pt;text-align:right;font-size:10pt;color:#1d4ed8;border-bottom:1px solid #93c5fd">${h}</th>`).join('')}
+              <tr style="background:rgba(37,99,235,0.12)">
+                ${colHeaders.map(h=>`<th style="padding:5pt 6pt;text-align:right;font-size:10pt;color:#1d4ed8;border-bottom:2px solid #93c5fd">${h}</th>`).join('')}
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -899,7 +910,6 @@ function doPost(e) {
         </div>`;
       }).join('');
 
-      // Inject into hidden iframe for clean print
       const iframe = document.createElement('iframe');
       iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none';
       document.body.appendChild(iframe);
@@ -909,8 +919,6 @@ function doPost(e) {
         <style>
           *{box-sizing:border-box;margin:0;padding:0}
           body{font-family:'Cairo',sans-serif;background:#fff;color:#1e293b}
-          table{table-layout:fixed}
-          td{padding:4pt 6pt;border-bottom:1px solid #e2e8f0;vertical-align:top;word-break:break-word}
           @page{size:auto;margin:0}
           @media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
         </style>
@@ -937,7 +945,8 @@ function doPost(e) {
       const printIds = new Set(toPrint.map(p => p.id));
       if (printScope === 'selected') {
         allRows.forEach(tr => {
-          tr.style.display = printIds.has(tr.getAttribute('data-id')) ? '' : 'none';
+          const id = parseInt(tr.getAttribute('data-id'));
+          tr.style.display = printIds.has(id) ? '' : 'none';
         });
       }
 
