@@ -862,7 +862,7 @@ function doPost(e) {
     document.body.style.zoom = '1';
 
     if (printScope === 'byroom') {
-      // ── BY ROOM: one clean page per room ──────────
+      // ── BY ROOM: landscape, dark theme, one page per room ──
       const roomMap = new Map();
       toPrint.forEach(p => {
         const r = p.room || 'No Room';
@@ -871,56 +871,86 @@ function doPost(e) {
       });
       const rooms = [...roomMap.keys()].sort();
 
-      const colHeaders = ['Name','Age','Diagnosis','Decision','Status','Skin','Notes'];
-      const colKeys    = ['name','age','diagnosis','decision','anesthesia','skin','notes'];
+      const colHeaders = ['Date of Admission','Name','Age','Diagnosis','Decision','Status','Skin','Notes'];
+      const colKeys    = ['admission','name','age','diagnosis','decision','anesthesia','skin','notes'];
+      const colWidths  = ['11%','16%','5%','18%','14%','8%','8%','20%'];
+
       const e = v => (v===undefined||v===null||v==='')?'—':String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+      // Replicate the same badge logic for Decision
+      const decBadge = v => {
+        if (!v) return '—';
+        const l = v.toLowerCase();
+        let bg='rgba(255,255,255,0.09)', col='rgba(255,255,255,0.7)';
+        if (l.includes('admit')||l.includes('approved')||l.includes('accept'))  { bg='rgba(16,185,129,0.25)';col='#34d399'; }
+        else if (l.includes('pend')||l.includes('wait')||l.includes('hold'))    { bg='rgba(245,158,11,0.25)'; col='#fbbf24'; }
+        else if (l.includes('reject')||l.includes('refuse')||l.includes('deny')){ bg='rgba(239,68,68,0.25)';  col='#f87171'; }
+        else if (l.includes('transfer')||l.includes('refer')||l.includes('discharge')){ bg='rgba(37,99,235,0.25)';col='#60a5fa'; }
+        return `<span style="background:${bg};color:${col};padding:2pt 5pt;border-radius:10px;font-size:9pt;font-weight:600">${e(v)}</span>`;
+      };
 
       const roomPages = rooms.map((room, idx) => {
         const pts = roomMap.get(room);
-        // Sort: non-done first, done at bottom
+        // Done patients to bottom
         pts.sort((a,b) => {
           const aD = (a.anesthesia||'').toLowerCase().includes('done');
           const bD = (b.anesthesia||'').toLowerCase().includes('done');
           return aD === bD ? 0 : aD ? 1 : -1;
         });
+
+        const colgroup = colWidths.map(w => `<col style="width:${w}">`).join('');
+
         const rows = pts.map(p => {
           const isDoneP = (p.anesthesia||'').toLowerCase().includes('done');
-          const rowStyle = isDoneP ? 'opacity:0.5;background:rgba(16,185,129,0.08);border-right:3px solid #10b981' : '';
-          const cells = colKeys.map(k => `<td style="padding:5pt 6pt;border-bottom:1px solid #e2e8f0;vertical-align:top;word-break:break-word">${e(p[k])}</td>`).join('');
-          return `<tr style="${rowStyle}">${cells}</tr>`;
+          const rowBg   = isDoneP ? 'background:rgba(16,185,129,0.12)' : '';
+          const textCol = isDoneP ? 'color:rgba(255,255,255,0.45)' : 'color:rgba(255,255,255,0.9)';
+          const leftBorder = isDoneP ? 'border-right:3px solid #10b981' : '';
+          const cellStyle = `padding:5pt 6pt;border-bottom:1px solid rgba(255,255,255,0.07);vertical-align:top;word-break:break-word;font-size:10pt;${textCol}`;
+          const cells = colKeys.map((k,i) => {
+            const val = k === 'decision' ? decBadge(p[k]) : e(p[k]);
+            return `<td style="${cellStyle}">${val}</td>`;
+          }).join('');
+          return `<tr style="${rowBg};${leftBorder}">${cells}</tr>`;
         }).join('');
-        const pageBreak = idx < rooms.length - 1 ? 'page-break-after:always;' : '';
-        return `<div style="${pageBreak}padding:8mm 8mm 4mm 8mm">
-          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #2563eb;padding-bottom:6pt;margin-bottom:8pt">
-            <div>
-              <div style="font-size:13pt;font-weight:700">🏥 Ibn Tharwat Hospital</div>
-              <div style="font-size:9pt;opacity:0.6">Printed: ${now}</div>
-            </div>
-            <div style="font-size:20pt;font-weight:900;color:#2563eb">Room ${room}</div>
-            <div style="font-size:9pt;text-align:right;opacity:0.6">${pts.length} patient(s)</div>
+
+        const pageBreak = idx < rooms.length - 1 ? 'page-break-after:always' : '';
+
+        return `<div style="${pageBreak};padding:6mm 8mm 5mm 8mm;background:#0a1628;min-height:100vh">
+          <!-- Room heading -->
+          <div style="text-align:center;margin-bottom:6mm;padding-bottom:4mm;border-bottom:2px solid rgba(37,99,235,0.5)">
+            <div style="font-size:9pt;color:rgba(255,255,255,0.45);margin-bottom:2pt">🏥 Ibn Tharwat Hospital &nbsp;·&nbsp; Printed: ${now}</div>
+            <div style="font-size:26pt;font-weight:900;color:#3b82f6;letter-spacing:0.04em">Room ${room}</div>
+            <div style="font-size:9pt;color:rgba(255,255,255,0.45);margin-top:2pt">${pts.length} patient(s)</div>
           </div>
-          <table style="width:100%;border-collapse:collapse;font-size:10pt;font-family:Cairo,sans-serif;direction:rtl;table-layout:fixed">
+          <!-- Table -->
+          <table style="width:100%;border-collapse:collapse;font-family:'Cairo',sans-serif;direction:rtl;table-layout:fixed">
+            <colgroup>${colgroup}</colgroup>
             <thead>
-              <tr style="background:rgba(37,99,235,0.12)">
-                ${colHeaders.map(h=>`<th style="padding:5pt 6pt;text-align:right;font-size:10pt;color:#1d4ed8;border-bottom:2px solid #93c5fd">${h}</th>`).join('')}
+              <tr style="background:rgba(37,99,235,0.45)">
+                ${colHeaders.map(h=>`<th style="padding:5pt 6pt;text-align:right;font-size:10pt;font-weight:700;color:#93c5fd;letter-spacing:0;white-space:normal;word-break:break-word;border-bottom:1px solid rgba(37,99,235,0.4)">${h}</th>`).join('')}
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
+          ${pts.some(p=>(p.anesthesia||'').toLowerCase().includes('done')) ?
+            `<div style="margin-top:6pt;font-size:8pt;color:#10b981;opacity:0.7">● Done patients are highlighted at the bottom</div>` : ''}
         </div>`;
       }).join('');
 
       const iframe = document.createElement('iframe');
-      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none';
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:297mm;height:210mm;border:none';
       document.body.appendChild(iframe);
       iframe.contentDocument.write(`<!DOCTYPE html><html><head>
         <meta charset="UTF-8">
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
         <style>
           *{box-sizing:border-box;margin:0;padding:0}
-          body{font-family:'Cairo',sans-serif;background:#fff;color:#1e293b}
-          @page{size:auto;margin:0}
-          @media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
+          html,body{background:#0a1628;color:#fff;font-family:'Cairo',sans-serif}
+          @page{size:A4 landscape;margin:0}
+          @media print{
+            *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+            html,body{background:#0a1628!important}
+          }
         </style>
       </head><body>${roomPages}</body></html>`);
       iframe.contentDocument.close();
